@@ -9,8 +9,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"sync"
-	"time"
 
 	"github.com/gorilla/mux"
 )
@@ -20,12 +18,57 @@ type Item struct {
 	Name string `json:"name"`
 }
 
-type ItemDetails struct {
-	Item
-	Details string `json:"details"`
-}
-
 var Items []Item
+
+func main() {
+
+	// samuel := Item{"01", "samuel"}
+	// pedro := Item{"02", "pedro"}
+	// pablo := Item{"03", "pablo"}
+	// maria := Item{"04", "maria"}
+	// sol := Item{"05", "sol"}
+	// eunice := Item{"06", "eunice"}
+	// camila := Item{"07", "camila"}
+	// bryan := Item{"08", "samuel"}
+	// lester := Item{"09", "lester"}
+	ignacio := Item{"item11", "Item 1"}
+	anibal := Item{"item12", "Item 1"}
+	Items = append(Items, ignacio, anibal)
+
+	// Items = []Item{samuel, pedro, pablo, maria, sol, eunice, camila, bryan, lester, ignacio}
+
+	for i := 1; i <= 10; i++ {
+		Items = append(Items, Item{ID: fmt.Sprintf("item%d", i), Name: fmt.Sprintf("Item %d", i)})
+	}
+
+	router := mux.NewRouter() // aca creamos el coso para configurar el servidor, el coso se llama router
+
+	// aca definimos el comportamiento del servidor
+	router.HandleFunc("/", handleRootResource).Methods("GET")
+	router.HandleFunc("/otro", handleOtherResource).Methods("GET")
+	router.HandleFunc("/chatgpt", chatgptHandler).Methods("GET")
+
+	//Tarea 25/04/2023
+	router.HandleFunc("/items", getItems).Methods("GET")
+	router.HandleFunc("/items/id/{id}", getItemID).Methods("GET")
+
+	// Nuevos endpoints 26/04/2023
+	router.HandleFunc("/items", createItem).Methods("POST")
+	router.HandleFunc("/items/{id}", updateItem).Methods("PUT")
+	router.HandleFunc("/items/{id}", deleteItem).Methods("DELETE")
+	router.HandleFunc("/items/name/{name}", getItemName).Methods("GET")
+
+	// aca termine de definir el comportamiento
+
+	// levantar el servidor en un "puerto"
+	var portNumber int = 9999
+	fmt.Println("Listen in port ", portNumber)
+	err := http.ListenAndServe(":"+strconv.Itoa(portNumber), router)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println("ADIOS")
+}
 
 func handleRootResource(response http.ResponseWriter, request *http.Request) {
 	msg := "Soy el recurso raiz"
@@ -62,31 +105,13 @@ func chatgptHandler(response http.ResponseWriter, request *http.Request) {
 }
 
 func getItems(w http.ResponseWriter, r *http.Request) {
+
+	// json.NewEncoder(w).Encode(Items)
+
 	// Establecemos el encabezado "Content-Type" de la respuesta HTTP como "application/json"
 	w.Header().Set("Content-Type", "application/json")
-	pageUser := r.URL.Query().Get("page")
-	itemsUser := r.URL.Query().Get("itemsPerPage")
-	// Convertir los parámetros a enteros
-	page, err := strconv.Atoi(pageUser)
-	if err != nil {
-		page = 1
-	}
-	itemsPerPage, err := strconv.Atoi(itemsUser)
-	if err != nil {
-		itemsPerPage = 10
-	}
-	inicio := (page - 1) * itemsPerPage
-	// Obtener los elementos del slice que corresponden a la página solicitada
-	var resultado []Item
-	if inicio >= 0 && inicio < len(Items) {
-		final := inicio + itemsPerPage
-		if final > len(Items) {
-			final = len(Items)
-		}
-		resultado = Items[inicio:final]
-	}
-	// Función para obtener todos los elementos
-	json.NewEncoder(w).Encode(resultado)
+	// Convertimos la variable 'Items' en una representación JSON y la enviamos como parte de la respuesta HTTP
+	json.NewEncoder(w).Encode(Items)
 }
 
 func getItemID(w http.ResponseWriter, r *http.Request) {
@@ -108,6 +133,23 @@ func getItemID(w http.ResponseWriter, r *http.Request) {
 
 	// Si no encontramos ningún elemento con el ID especificado, enviamos un objeto 'Item' vacío como respuesta HTTP
 	json.NewEncoder(w).Encode(&Item{})
+
+	// var idParam string = mux.Vars(r)["id"]
+	// id, err := strconv.Atoi(idParam)
+	// if err != nil {
+	// 	w.WriteHeader(400)
+	// 	w.Write([]byte("ID no puede ser convertido"))
+	// 	return
+	// }
+
+	// if id >= len(Items)+1 {
+	// 	w.WriteHeader(404)
+	// 	w.Write([]byte("No se encuentra ningun item con ese ID"))
+	// }
+
+	// detalle := Items[id-1]
+	// w.Header().Set("Contenido-Tipo", "aplicacion/json")
+	// json.NewEncoder(w).Encode(detalle)
 
 }
 
@@ -201,89 +243,4 @@ func deleteItem(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Fprintf(w, "Usuario no encontrado")
 
-}
-
-func getItemDetails(id string) ItemDetails {
-	// Simula la obtención de detalles desde una fuente externa con un time.Sleep
-	time.Sleep(100 * time.Millisecond)
-	var foundItem Item
-	for _, item := range Items {
-		if item.ID == string(id) {
-			foundItem = item
-			break
-		}
-	}
-	//Obviamente, aquí iria un SELECT si es SQL o un llamado a un servicio externo
-	//pero esta busqueda del item junto con Details, la hacemos a mano.
-	return ItemDetails{
-		Item:    foundItem,
-		Details: fmt.Sprintf("Detalles para el item %d", id),
-	}
-}
-
-func getDetails(w http.ResponseWriter, r *http.Request) {
-	// Establecemos el encabezado "Content-Type" de la respuesta HTTP como "application/json"
-	w.Header().Set("Content-Type", "application/json")
-
-	wg := &sync.WaitGroup{}
-	detailsChannel := make(chan ItemDetails, len(Items))
-	var detailedItems []ItemDetails
-
-	for _, item := range Items {
-		wg.Add(1) // Creamos el escucha, sin aun crearse la gorutina
-		go func(id string) {
-			defer wg.Done() //Completamos el trabajo del escucha, al final de esta ejecución
-			detailsChannel <- getItemDetails(id)
-		}(item.ID)
-	}
-
-	go func() {
-		wg.Wait()
-		close(detailsChannel)
-	}()
-
-	for details := range detailsChannel {
-		detailedItems = append(detailedItems, details)
-	}
-
-	fmt.Println(detailedItems)
-	json.NewEncoder(w).Encode(detailedItems)
-}
-
-func main() {
-
-	for i := 1; i <= 10; i++ {
-		Items = append(Items, Item{ID: fmt.Sprintf("item%d", i), Name: fmt.Sprintf("Item %d", i)})
-	}
-
-	router := mux.NewRouter() // aca creamos el coso para configurar el servidor, el coso se llama router
-
-	// aca definimos el comportamiento del servidor
-	router.HandleFunc("/", handleRootResource).Methods("GET")
-	router.HandleFunc("/otro", handleOtherResource).Methods("GET")
-	router.HandleFunc("/chatgpt", chatgptHandler).Methods("GET")
-
-	//Tarea 25/04/2023
-	router.HandleFunc("/items", getItems).Methods("GET")
-	router.HandleFunc("/items/id/{id}", getItemID).Methods("GET")
-
-	// Nuevos endpoints 26/04/2023
-	router.HandleFunc("/items", createItem).Methods("POST")
-	router.HandleFunc("/items/{id}", updateItem).Methods("PUT")
-	router.HandleFunc("/items/{id}", deleteItem).Methods("DELETE")
-	router.HandleFunc("/items/name/{name}", getItemName).Methods("GET")
-
-	// ejercicio 1 28/04/2023
-	router.HandleFunc("/items/details", getDetails).Methods("GET")
-
-	// aca termine de definir el comportamiento
-
-	// levantar el servidor en un "puerto"
-	var portNumber int = 9999
-	fmt.Println("Listen in port ", portNumber)
-	err := http.ListenAndServe(":"+strconv.Itoa(portNumber), router)
-	if err != nil {
-		fmt.Println(err)
-	}
-	fmt.Println("ADIOS")
 }
