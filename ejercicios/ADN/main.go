@@ -15,10 +15,6 @@ func main() {
 	fmt.Println("Cadena rotada a la derecha: ", rotarcadenas.RotarDerecha(s))
 	fmt.Println("Cadena rotada a la izquierda: ", rotarcadenas.RotarIzquierda(s))
 
-	if rotarcadenas.CompararADN(s, a) {
-		fmt.Println("Las cadenas de ADN son iguales")
-	} else {
-		fmt.Println("Las cadenas de ADN son diferentes")
-	}
+	rotarcadenas.VerificarADN(s, a)
 
 }

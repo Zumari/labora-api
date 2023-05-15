@@ -1,6 +1,7 @@
 package rotarcadenas
 
 import (
+	"fmt"
 	"strings"
 )
 
@@ -50,4 +51,12 @@ func CompararADN(a, b string) bool {
 		}
 	}
 	return resultado
+}
+
+func VerificarADN(s, a string) {
+	if CompararADN(s, a) {
+		fmt.Println("Las cadenas de ADN son iguales")
+	} else {
+		fmt.Println("Las cadenas de ADN son diferentes")
+	}
 }
