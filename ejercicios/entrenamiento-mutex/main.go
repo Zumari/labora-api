@@ -16,20 +16,19 @@ var mutex sync.Mutex
 
 // Método que incrementa el saldo de la cuenta con la cantidad dada
 func (account *BankAccount) Deposit(amount int) {
-	mutex.Lock()
 	account.Balance += amount
-	mutex.Unlock()
 }
 
 // Método que decrementa el saldo de la cuenta con la cantidad dada
 func (account *BankAccount) Withdraw(amount int) {
-	mutex.Lock()
+
 	account.Balance -= amount
-	mutex.Unlock()
+
 }
 
 // Función que realiza una transacción (depósito o retiro) en la cuenta
 func processTransaction(account *BankAccount, transactionType string, amount int) {
+	mutex.Lock()
 	switch transactionType {
 	case "deposit":
 		account.Deposit(amount)
@@ -38,6 +37,7 @@ func processTransaction(account *BankAccount, transactionType string, amount int
 		account.Withdraw(amount)
 		fmt.Printf("Retiro: %d. Balance actual: %d\n", amount, account.Balance) // imprime la cantidad retirada y el saldo actual
 	}
+	mutex.Unlock()
 }
 
 func main() {
@@ -56,6 +56,8 @@ func main() {
 		go processTransaction(account, transactionType, amount) // inicia una goroutine para procesar la transacción
 	}
 
-	time.Sleep(3 * time.Second)                        // espera a que todas las goroutines finalicen
+	time.Sleep(3 * time.Second)
+	mutex.Lock()                                       // espera a que todas las goroutines finalicen
 	fmt.Printf("Balance final: %d\n", account.Balance) // imprime el saldo final
+	mutex.Unlock()
 }
