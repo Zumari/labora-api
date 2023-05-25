@@ -16,6 +16,7 @@ type Item struct {
 	ViewCounter  int       `json:"viewCounter"`
 }
 
+// GeneratorTotalPrice it generates the total price of items based on quantity and price.
 func (item Item) GeneratorTotalPrice() float32 {
 	totalPrice := item.Price * float32(item.Quantity)
 	return totalPrice

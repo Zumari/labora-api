@@ -64,6 +64,7 @@ func GetItemsPaginated(w http.ResponseWriter, r *http.Request) {
 	newList, count, err := services.GetItemsPerPage(page, itemsPerPage)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+
 		return
 	}
 
@@ -85,11 +86,13 @@ func GetItemsPaginated(w http.ResponseWriter, r *http.Request) {
 	jsonData, err := json.Marshal(responseData)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+
 		return
 	}
 	w.Write(jsonData)
 }
 
+// GetItemById returns a item sought by su id.
 func GetItemById(response http.ResponseWriter, request *http.Request) {
 	response.Header().Set("Content-Type", "application/json")
 
@@ -100,6 +103,7 @@ func GetItemById(response http.ResponseWriter, request *http.Request) {
 		// Manejar el error de la conversión
 		response.WriteHeader(http.StatusBadRequest)
 		response.Write([]byte("ID must be a number"))
+
 		return
 	}
 
@@ -111,6 +115,7 @@ func GetItemById(response http.ResponseWriter, request *http.Request) {
 	json.NewEncoder(response).Encode(item)
 }
 
+// GetItemByName returns the items found that have the name to search.
 func GetItemByName(response http.ResponseWriter, request *http.Request) {
 	response.Header().Set("Content-Type", "application/json")
 
@@ -125,6 +130,7 @@ func GetItemByName(response http.ResponseWriter, request *http.Request) {
 	json.NewEncoder(response).Encode(items)
 }
 
+// CreateItem create a new item.
 func CreateItem(response http.ResponseWriter, request *http.Request) {
 	var newItem models.Item
 	var items []models.Item
@@ -132,31 +138,36 @@ func CreateItem(response http.ResponseWriter, request *http.Request) {
 	err := json.NewDecoder(request.Body).Decode(&newItem)
 	if err != nil {
 		response.WriteHeader(http.StatusBadRequest)
-		response.Write([]byte("Error al procesar la solicitud"))
+		response.Write([]byte("Error when processing the application"))
+
 		return
 	}
 
 	newItem, err = services.CreateItem(newItem)
 	if err != nil {
 		response.WriteHeader(http.StatusBadRequest)
-		response.Write([]byte("Error al procesar la solicitud"))
+		response.Write([]byte("Error when processing the application"))
+
 		return
 	}
 
 	items, err = services.GetItems()
 	if err != nil {
 		response.WriteHeader(http.StatusBadRequest)
-		response.Write([]byte("Error al procesar la solicitud"))
+		response.Write([]byte("Error when processing the application"))
+
 		return
 	}
 
 	JsonResponse(response, http.StatusOK, items)
 }
 
+// UpdateItem update an item for your id.
 func UpdateItem(response http.ResponseWriter, request *http.Request) {
 	items, err := services.GetItems()
 	if err != nil {
 		http.Error(response, err.Error(), http.StatusBadRequest)
+
 		return
 	}
 	parameters := mux.Vars(request)
@@ -166,40 +177,47 @@ func UpdateItem(response http.ResponseWriter, request *http.Request) {
 	defer request.Body.Close()
 	if err != nil {
 		http.Error(response, err.Error(), http.StatusBadRequest)
+
 		return
 	}
 
 	id, err := strconv.Atoi(parameters["id"])
 	if err != nil {
 		http.Error(response, err.Error(), http.StatusBadRequest)
+
 		return
 	}
 
 	itemUpdate, err = services.UpdateItem(id, itemUpdate)
 	if err != nil {
 		http.Error(response, err.Error(), http.StatusBadRequest)
+
 		return
 	}
 	items, err = services.GetItems()
 	JsonResponse(response, http.StatusOK, items)
 }
 
+// DeleteItem delete an item for your id.
 func DeleteItem(response http.ResponseWriter, request *http.Request) {
 	items, err := services.GetItems()
 	if err != nil {
 		http.Error(response, err.Error(), http.StatusBadRequest)
+
 		return
 	}
 	parameters := mux.Vars(request)
 	id, err := strconv.Atoi(parameters["id"])
 	if err != nil {
 		http.Error(response, err.Error(), http.StatusBadRequest)
+
 		return
 	}
 
 	_, err = services.DeleteItem(id)
 	if err != nil {
 		http.Error(response, err.Error(), http.StatusBadRequest)
+
 		return
 	}
 	items, err = services.GetItems()
@@ -207,6 +225,7 @@ func DeleteItem(response http.ResponseWriter, request *http.Request) {
 
 }
 
+// ItemDetails shows the details of the items for their id.
 func ItemDetails(response http.ResponseWriter, request *http.Request) {
 
 	var updateItem models.Item

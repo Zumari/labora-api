@@ -17,14 +17,7 @@ type DbConnection struct {
 
 var Db DbConnection
 
-// const (
-// 	host        = "localhost"
-// 	port        = "5432"
-// 	dbName      = "labora-proyect-1"
-// 	rolName     = "postgres1"
-// 	rolPassword = "postgres1"
-// )
-
+// GetEnvCredentials obtain the .env file credentials, transforms them for their correct use and returns them.
 func GetEnvCredentials() (string, string, string, string, string) {
 	err := godotenv.Load(".env")
 	if err != nil {
@@ -41,15 +34,16 @@ func GetEnvCredentials() (string, string, string, string, string) {
 
 }
 
+// PingOrDie indicate whether or not there is connection with the database server.
 func (db *DbConnection) PingOrDie() {
 	if err := db.Ping(); err != nil {
 		log.Fatalf("Cannot reach database, error: %v", err)
 	}
 }
 
+// Connect_DB establish the connection with the database.
 func Connect_DB() {
 	host, port, dbName, rolName, rolPassword := GetEnvCredentials()
-	fmt.Printf("El pinchi HOST WQUEDA COMO: %s", host)
 	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", host, port, rolName, rolPassword, dbName)
 	dbConn, err := sql.Open("postgres", psqlInfo)
 	if err != nil {

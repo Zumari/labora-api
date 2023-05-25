@@ -16,6 +16,7 @@ var itemTest = []Item{
 
 var expectedTotalValue = []float32{300.0, 600.0, 55.0, 210.0, 135.0, 100.0}
 
+// TestTotalPriceWorks check that the total prices of items are generated correctly.
 func TestTotalPriceWorks(t *testing.T) {
 
 	for i, test := range itemTest {
