@@ -13,6 +13,7 @@ type Item struct {
 	Price        float32   `json:"price"`
 	Details      string    `json:"details"`
 	TotalPrice   float32   `json:"totalPrice"`
+	ViewCounter  int       `json:"viewCounter"`
 }
 
 func (item Item) GeneratorTotalPrice() float32 {

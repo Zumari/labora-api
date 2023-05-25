@@ -4,7 +4,9 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"os"
 
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
 
@@ -15,13 +17,29 @@ type DbConnection struct {
 
 var Db DbConnection
 
-const (
-	host        = "localhost"
-	port        = "5432"
-	dbName      = "labora-proyect-1"
-	rolName     = "postgres1"
-	rolPassword = "postgres1"
-)
+// const (
+// 	host        = "localhost"
+// 	port        = "5432"
+// 	dbName      = "labora-proyect-1"
+// 	rolName     = "postgres1"
+// 	rolPassword = "postgres1"
+// )
+
+func GetEnvCredentials() (string, string, string, string, string) {
+	err := godotenv.Load(".env")
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	host := os.Getenv("host")
+	port := os.Getenv("port")
+	dbName := os.Getenv("dbName")
+	rolName := os.Getenv("rolName")
+	rolPassword := os.Getenv("rolPassword")
+
+	return host, port, dbName, rolName, rolPassword
+
+}
 
 func (db *DbConnection) PingOrDie() {
 	if err := db.Ping(); err != nil {
@@ -30,6 +48,8 @@ func (db *DbConnection) PingOrDie() {
 }
 
 func Connect_DB() {
+	host, port, dbName, rolName, rolPassword := GetEnvCredentials()
+	fmt.Printf("El pinchi HOST WQUEDA COMO: %s", host)
 	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", host, port, rolName, rolPassword, dbName)
 	dbConn, err := sql.Open("postgres", psqlInfo)
 	if err != nil {

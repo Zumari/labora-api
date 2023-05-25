@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"sync"
 
 	"github.com/Zumari/labora-api/API/models"
 )
@@ -20,7 +21,7 @@ func GetItems() ([]models.Item, error) {
 
 	for rows.Next() {
 		var item models.Item
-		err := rows.Scan(&item.ID, &item.CustomerName, &item.OrderDate, &item.Product, &item.Quantity, &item.Price, &item.Details)
+		err := rows.Scan(&item.ID, &item.CustomerName, &item.OrderDate, &item.Product, &item.Quantity, &item.Price, &item.Details, &item.ViewCounter)
 		if err != nil {
 			fmt.Println(err)
 			continue
@@ -51,7 +52,7 @@ func GetItemsPerPage(pages, itemsPerPage int) ([]models.Item, int, error) {
 	var newListItems []models.Item
 	for rows.Next() {
 		var item models.Item
-		err := rows.Scan(&item.ID, &item.CustomerName, &item.OrderDate, &item.Product, &item.Quantity, &item.Price, &item.Details)
+		err := rows.Scan(&item.ID, &item.CustomerName, &item.OrderDate, &item.Product, &item.Quantity, &item.Price, &item.Details, &item.ViewCounter)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -64,9 +65,17 @@ func GetItemsPerPage(pages, itemsPerPage int) ([]models.Item, int, error) {
 	return newListItems, count, nil
 }
 
+var m sync.Mutex
+
 func GetItemId(id int) (models.Item, error) {
 	var item models.Item
-	err := Db.QueryRow("SELECT * FROM items WHERE id=$1", id).Scan(&item.ID, &item.CustomerName, &item.OrderDate, &item.Product, &item.Quantity, &item.Price, &item.Details)
+
+	m.Lock()
+	Db.QueryRow("UPDATE items SET view_counter = view_counter + $1 WHERE id = $2 RETURNING *",
+		1, id)
+	m.Unlock()
+
+	err := Db.QueryRow("SELECT * FROM items WHERE id=$1", id).Scan(&item.ID, &item.CustomerName, &item.OrderDate, &item.Product, &item.Quantity, &item.Price, &item.Details, &item.ViewCounter)
 	if err != nil {
 		return models.Item{}, err
 	}
@@ -84,7 +93,7 @@ func GetItemName(name string) ([]models.Item, error) {
 	defer rows.Close()
 
 	for rows.Next() {
-		err := rows.Scan(&item.ID, &item.CustomerName, &item.OrderDate, &item.Product, &item.Quantity, &item.Price, &item.Details)
+		err := rows.Scan(&item.ID, &item.CustomerName, &item.OrderDate, &item.Product, &item.Quantity, &item.Price, &item.Details, &item.ViewCounter)
 		if err != nil {
 			return items, err
 		}

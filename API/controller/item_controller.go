@@ -13,32 +13,39 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func Json(response http.ResponseWriter, status int, data interface{}) {
+// JsonResponse returns a JSON type response.
+func JsonResponse(response http.ResponseWriter, status int, data interface{}) error {
 	bytes, err := json.Marshal(data)
 	if err != nil {
-		fmt.Errorf("error while marshalling object %v, trace: %+v", data, err)
 		response.WriteHeader(http.StatusInternalServerError)
-		return
+
+		return fmt.Errorf("error while marshalling object %v, trace: %+v", data, err)
 	}
 	response.Header().Set("Content-Type", "application/json")
 	response.WriteHeader(status)
 	_, err = response.Write(bytes)
 	if err != nil {
-		fmt.Errorf("error while writing bytes to response writer: %+v", err)
+
+		return fmt.Errorf("error while writing bytes to response writer: %+v", err)
 	}
+
+	return nil
 }
 
+// GetAllItems returns all elements in JSON format.
 func GetAllItems(response http.ResponseWriter, _ *http.Request) {
 	items, err := services.GetItems()
 	if err != nil {
 		response.WriteHeader(http.StatusInternalServerError)
 		response.Write([]byte("Error getting items"))
+
 		return
 	}
 
-	Json(response, http.StatusOK, items)
+	JsonResponse(response, http.StatusOK, items)
 }
 
+// GetItemsPaginated returns the elements in JSON format segmented on pages.
 func GetItemsPaginated(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	pageUser := r.URL.Query().Get("page")
@@ -143,7 +150,7 @@ func CreateItem(response http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	Json(response, http.StatusOK, items)
+	JsonResponse(response, http.StatusOK, items)
 }
 
 func UpdateItem(response http.ResponseWriter, request *http.Request) {
@@ -174,7 +181,7 @@ func UpdateItem(response http.ResponseWriter, request *http.Request) {
 		return
 	}
 	items, err = services.GetItems()
-	Json(response, http.StatusOK, items)
+	JsonResponse(response, http.StatusOK, items)
 }
 
 func DeleteItem(response http.ResponseWriter, request *http.Request) {
@@ -196,7 +203,7 @@ func DeleteItem(response http.ResponseWriter, request *http.Request) {
 		return
 	}
 	items, err = services.GetItems()
-	Json(response, http.StatusOK, items)
+	JsonResponse(response, http.StatusOK, items)
 
 }
 
@@ -208,6 +215,7 @@ func ItemDetails(response http.ResponseWriter, request *http.Request) {
 	if err != nil {
 		fmt.Println(err)
 		http.Error(response, err.Error(), http.StatusBadRequest)
+
 		return
 	}
 
@@ -215,12 +223,14 @@ func ItemDetails(response http.ResponseWriter, request *http.Request) {
 	if err != nil {
 		fmt.Println(err)
 		http.Error(response, err.Error(), http.StatusBadRequest)
+
 		return
 	}
-	Json(response, http.StatusOK, updateItem)
+	JsonResponse(response, http.StatusOK, updateItem)
 
 }
 
-func Root(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("You are on the root path")
+// RootReturn indicates that he is in the root directory.
+func RootReturn(w http.ResponseWriter, _ *http.Request) {
+	w.Write([]byte("You are on the root path"))
 }
